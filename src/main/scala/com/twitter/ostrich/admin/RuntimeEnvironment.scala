@@ -23,6 +23,7 @@ import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.logging.Logger
 import com.twitter.util.{Config, Eval}
+import stats._
 
 object RuntimeEnvironment {
   /**
@@ -170,6 +171,9 @@ class RuntimeEnvironment(obj: AnyRef) {
       val eval = new Eval
       val config = eval[Config[T]](configFile)
       config.validate()
+      val c = Stats.getCounter("unhandled_thread_deaths")
+      val exceptionHandler = new DeathRattleExceptionHandler(c)
+      Thread.setDefaultUncaughtExceptionHandler(exceptionHandler)
       config()
     } catch {
       case e: Eval.CompilerException =>
